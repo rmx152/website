@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue';
-import { LucideStar, LucideGitFork, LucideEye, LucideCode } from 'lucide-vue-next'; // Correct package
+import { LucideStar, LucideGitFork, LucideEye, LucideCode } from 'lucide-vue-next';
 
 const projects = ['Streaming-status', 'Custom-status', 'Online-VC', 'Executor-Key-Bypass-Discord-Bot'];
 const repos = ref([]);
@@ -42,7 +42,6 @@ const getLanguageColor = (language) => {
 <template>
     <div class="mb-6 font-bold text-3xl text-catppuccin-gray">Project/</div>
 
-    <!-- Loading and Error States -->
     <div v-if="loading" class="text-center py-12">
       <div class="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-catppuccin-blue mx-auto"></div>
       <p class="mt-4 text-catppuccin-subtext0 font-inter">Loading projects...</p>
@@ -53,7 +52,6 @@ const getLanguageColor = (language) => {
       <p class="mt-4 text-catppuccin-red font-inter">{{ error }}</p>
     </div>
 
-    <!-- Projects Grid -->
     <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       <a v-for="repo in sortedRepos" :key="repo.id" :href="repo.html_url" target="_blank"
          class="bg-catppuccin-base border border-catppuccin-surface0 rounded-lg overflow-hidden shadow-lg transition-all duration-300 hover:shadow-2xl hover:scale-105 transform">
@@ -69,7 +67,6 @@ const getLanguageColor = (language) => {
           <h3 class="text-xl font-bold text-catppuccin-text mb-2 font-inter" :class="{ 'line-through': repo.archived }">{{ repo.name }}</h3>
           <p class="text-catppuccin-subtext1 text-sm mb-4 font-inter">{{ repo.description || 'No description available.' }}</p>
 
-          <!-- Icons Section (Stars, Forks, Watchers) -->
           <div class="flex items-center space-x-4 text-catppuccin-subtext0">
             <div class="flex items-center space-x-1">
               <LucideStar class="h-4 w-4 text-catppuccin-yellow" />
@@ -86,7 +83,6 @@ const getLanguageColor = (language) => {
           </div>
         </div>
 
-        <!-- Footer Section (Language and Last Update) -->
         <div class="px-6 py-4 bg-catppuccin-mantle border-t border-catppuccin-surface0">
           <div class="flex items-center justify-between">
             <div class="flex items-center space-x-2">
@@ -101,10 +97,8 @@ const getLanguageColor = (language) => {
 </template>
 
 <style scoped>
-/* Import fonts */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
 
-/* Catppuccin Color Palette */
 :root {
   --catppuccin-base: #1e1e2e;
   --catppuccin-mantle: #181825;
@@ -117,16 +111,14 @@ const getLanguageColor = (language) => {
   --catppuccin-red: #f38ba8;
   --catppuccin-blue: #89b4fa;
   --catppuccin-gray: #b4befe;
-  --catppuccin-yellow: #f9e2af; /* Yellow for stars */
+  --catppuccin-yellow: #f9e2af; 
 }
 
-/* Font Setup */
 .font-inter {
   font-family: 'Inter', sans-serif;
 }
 
 
-/* Background for Sections */
 .bg-catppuccin-base { 
   background-color: var(--catppuccin-base); 
 }
@@ -137,13 +129,11 @@ const getLanguageColor = (language) => {
   background-color: var(--catppuccin-crust); 
 }
 
-/* Button Hover States */
 a:hover {
   transform: scale(1.05);
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
 }
 
-/* Loading Spinner Animation */
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
