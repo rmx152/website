@@ -4,7 +4,7 @@ import { ref, onMounted } from 'vue';
 const commit = ref(null);
 
 onMounted(async () => {
-  await fetch('https://api.github.com/repos/4levy/infoaboutme/commits')
+  await fetch('https://api.github.com/repos/4levy/website/commits')
     .then(response => response.json())
     .then(data => {
       commit.value = data[0]
