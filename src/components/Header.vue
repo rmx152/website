@@ -206,7 +206,7 @@ const connectWebSocket = () => {
 
       vscodeActivity.value =
         data.activities.find(
-          (activity) => activity.name === "Visual Studio Code"
+          (activity) => activity.name === "Code"
         ) || null;
 
       switch (data.discord_status) {
