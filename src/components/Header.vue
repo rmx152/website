@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted, computed } from "vue";
 import axios from "axios";
+import { debounce } from "lodash";
 import {
   LucideStar,
   LucideGitFork,
@@ -8,257 +9,85 @@ import {
   LucideCode,
 } from "lucide-vue-next";
 
-const discordStatusColor = ref("text-catppuccin-gray");
-const spotify = ref(null);
-const discordStatus = ref("offline");
-const vscodeActivity = ref(null);
-const ws = ref(null);
-const languageColors = ref({});
+// === CONSTANTS === //
+const GITHUB_API_URL = "https://api.github.com/users/4levy/repos";
+const LANG_COLOR_URL = "https://raw.githubusercontent.com/ozh/github-colors/master/colors.json";
+const WEBSOCKET_URL = "wss://api.lanyard.rest/socket";
+const DISCORD_USER_ID = "874898422233178142";
+const RECONNECT_INTERVAL = [1000, 2000, 5000, 10000];
+
+const EXTENSION_MAP = {
+  js: "JavaScript", ts: "TypeScript", py: "Python", java: "Java",
+  css: "CSS", html: "HTML", php: "PHP", c: "C", cpp: "C++",
+  cs: "C#", go: "Go", jsx: "React", vue: "Vue", json: "JSON",
+  md: "Markdown", sh: "Shell", rb: "Ruby", rs: "Rust", tsx: "React",
+  graphql: "GraphQL", mjs: "Node.js",
+};
+
+const darkMode = ref(false);
 const showProjects = ref(false);
 const used = ref(false);
-const darkMode = ref(false);
+const discordStatus = ref("offline");
+const discordStatusColor = ref("text-catppuccin-gray");
+const vscodeActivity = ref(null);
+const spotify = ref(null);
+const repos = ref([]);
+const languageColors = ref({});
+const ws = ref(null);
+const loading = ref(true);
+const error = ref(null);
+let reconnectAttempts = 0;
 
-// Projects data
+// === PROJECTS LIST === //
 const projects = [
   "Streaming-status",
   "Custom-status",
   "Online-VC",
   "Executor-Key-Bypass-Discord-Bot",
 ];
-const repos = ref([]);
-const loading = ref(true);
-const error = ref(null);
 
-const sortedRepos = computed(() => {
-  return repos.value.sort((a, b) => b.stargazers_count - a.stargazers_count);
+const sortedRepos = computed(() =>
+  repos.value.sort((a, b) => b.stargazers_count - a.stargazers_count)
+);
+
+const currentLanguageColor = computed(() => {
+  const activityDetails = vscodeActivity.value?.details?.split(" ").pop();
+  const language = getLanguageFromFile(activityDetails);
+  return `color: ${languageColors.value[language]?.color || "#4F5D95"}`;
 });
 
 const toggleDarkMode = () => {
   darkMode.value = !darkMode.value;
   document.body.classList.toggle("dark-mode", darkMode.value);
 };
+const toggleShowProjects = () => (showProjects.value = !showProjects.value);
+const toggleUsed = () => (used.value = !used.value);
 
-const toggleShowProjects = () => {
-  showProjects.value = !showProjects.value;
-};
-
-const toggleUsed = () => {
-  used.value = !used.value;
-};
-
-const fetchLanguageColors = async () => {
-  try {
-    const response = await axios.get(
-      "https://raw.githubusercontent.com/ozh/github-colors/master/colors.json"
-    );
-    languageColors.value = response.data;
-  } catch (error) {
-    console.error("Error fetching language colors:", error);
-  }
-};
-
-const getLanguageFromFile = (filename) => {
-  if (!filename) return "default";
-  const ext = filename.split(".").pop().toLowerCase();
-  const extensionMap = {
-    // Programming Languages
-    js: "JavaScript",
-    ts: "TypeScript",
-    py: "Python",
-    java: "Java",
-    html: "HTML",
-    css: "CSS",
-    php: "PHP",
-    c: "C",
-    cpp: "C++",
-    cs: "C#",
-    go: "Go",
-    rb: "Ruby",
-    rs: "Rust",
-    swift: "Swift",
-    kt: "Kotlin",
-    scala: "Scala",
-    groovy: "Groovy",
-    pl: "Perl",
-    lua: "Lua",
-    r: "R",
-    dart: "Dart",
-    f: "Fortran",
-    f90: "Fortran",
-    hs: "Haskell",
-    jl: "Julia",
-    lisp: "Lisp",
-    ml: "OCaml",
-    pas: "Pascal",
-    sql: "SQL",
-    sh: "Shell",
-    vb: "Visual Basic",
-    asm: "Assembly",
-    clj: "Clojure",
-    erl: "Erlang",
-    ex: "Elixir",
-    fs: "F#",
-    m: "Objective-C",
-    php: "PHP",
-    rkt: "Racket",
-    scm: "Scheme",
-    tex: "TeX",
-    vim: "Vim script",
-    zig: "Zig",
-
-    // Web Technologies and Frameworks
-    jsx: "React",
-    tsx: "React",
-    vue: "Vue",
-    svelte: "Svelte",
-    angular: "Angular",
-    ember: "Ember",
-    backbone: "Backbone.js",
-    preact: "Preact",
-    mjs: "Node.js",
-    graphql: "GraphQL",
-    prisma: "Prisma",
-    astro: "Astro",
-
-    // Markup and Style
-    md: "Markdown",
-    scss: "SCSS",
-    sass: "Sass",
-    less: "Less",
-    styl: "Stylus",
-    pug: "Pug",
-    haml: "Haml",
-    slim: "Slim",
-    xml: "XML",
-    yaml: "YAML",
-    toml: "TOML",
-
-    // Data Formats
-    json: "JSON",
-    csv: "CSV",
-
-    // Configuration
-    dockerfile: "Dockerfile",
-    ini: "INI",
-    editorconfig: "EditorConfig",
-    gitignore: "Git",
-    env: "DotENV",
-
-    // Build Tools
-    gradle: "Gradle",
-    maven: "Maven",
-    ant: "Ant",
-
-    // Others
-    ipynb: "Jupyter Notebook",
-    proto: "Protocol Buffers",
-    sol: "Solidity",
-  };
-  return extensionMap[ext] || "default";
-};
-
-const currentLanguageColor = computed(() => {
-  if (vscodeActivity.value) {
-    const language = getLanguageFromFile(
-      vscodeActivity.value.details.split(" ").pop()
-    );
-    return `color: ${languageColors.value[language]?.color || "#4F5D95"}`;
-  }
-  return "";
-});
-
-const vscodeStatus = computed(() => {
-  if (!vscodeActivity.value) return null;
-
-  const details = vscodeActivity.value.details || "";
-
-  if (details.toLowerCase().includes("idling")) {
-    return "idling";
-  }
-
-  return {
-    details: vscodeActivity.value.details || "Unknown file",
-    state: vscodeActivity.value.state || "Unknown state",
-  };
-});
-
-const connectWebSocket = () => {
-  ws.value = new WebSocket("wss://api.lanyard.rest/socket");
-
-  ws.value.onopen = () => {
-    ws.value.send(
-      JSON.stringify({
-        op: 2,
-        d: { subscribe_to_id: "874898422233178142" },
-      })
-    );
-  };
-
-  ws.value.onmessage = (event) => {
-    const message = JSON.parse(event.data);
-    if (message.t === "INIT_STATE" || message.t === "PRESENCE_UPDATE") {
-      const data = message.d;
-
-      console.log("Activities: ", data.activities);
-
-      spotify.value =
-        data.activities.find((activity) => activity.name === "Spotify") || null;
-
-      vscodeActivity.value =
-        data.activities.find(
-          (activity) => activity.name === "Code"
-        ) || null;
-
-      switch (data.discord_status) {
-        case "online":
-          discordStatusColor.value = "text-catppuccin-green";
-          discordStatus.value = "online";
-          break;
-        case "idle":
-          discordStatusColor.value = "text-catppuccin-yellow";
-          discordStatus.value = "idle";
-          break;
-        case "dnd":
-          discordStatusColor.value = "text-catppuccin-red";
-          discordStatus.value = "do not disturb";
-          break;
-        default:
-          discordStatusColor.value = "text-catppuccin-gray";
-          discordStatus.value = "offline";
-          break;
-      }
-    }
-  };
-
-  ws.value.onerror = (error) => {
-    console.error("WebSocket error", error);
-  };
-
-  ws.value.onclose = () => {
-    console.log("WebSocket connection closed");
-  };
-};
+const getLanguageFromFile = (filename) =>
+  EXTENSION_MAP[filename?.split(".").pop().toLowerCase()] || "default";
 
 const getLanguageColor = (language) => {
   const colors = {
-    JavaScript: "bg-yellow-300",
-    Python: "bg-blue-500",
-    Java: "bg-red-500",
-    "C#": "bg-green-500",
-    Ruby: "bg-red-600",
-    PHP: "bg-purple-500",
-    TypeScript: "bg-blue-600",
-    default: "bg-gray-500",
+    JavaScript: "bg-yellow-300", Python: "bg-blue-500",
+    Java: "bg-red-500", "C#": "bg-green-500", Ruby: "bg-red-600",
+    PHP: "bg-purple-500", TypeScript: "bg-blue-600", default: "bg-gray-500",
   };
   return colors[language] || colors.default;
 };
 
-onMounted(async () => {
-  connectWebSocket();
-  fetchLanguageColors();
-
+const fetchLanguageColors = async () => {
   try {
-    const response = await fetch("https://api.github.com/users/4levy/repos");
+    const { data } = await axios.get(LANG_COLOR_URL);
+    languageColors.value = data;
+  } catch (err) {
+    console.error("Error fetching language colors:", err);
+  }
+};
+
+const fetchRepos = async () => {
+  loading.value = true;
+  try {
+    const response = await fetch(GITHUB_API_URL);
     if (!response.ok) throw new Error("Failed to fetch repositories");
     const data = await response.json();
     repos.value = data.filter((repo) => projects.includes(repo.name));
@@ -267,12 +96,57 @@ onMounted(async () => {
   } finally {
     loading.value = false;
   }
+};
+
+const connectWebSocket = debounce(() => {
+  ws.value = new WebSocket(WEBSOCKET_URL);
+
+  ws.value.onopen = () => {
+    reconnectAttempts = 0;
+    ws.value.send(JSON.stringify({ op: 2, d: { subscribe_to_id: DISCORD_USER_ID } }));
+  };
+
+  ws.value.onmessage = ({ data }) => handleWebSocketMessage(JSON.parse(data));
+  ws.value.onerror = (err) => console.error("WebSocket error:", err);
+  ws.value.onclose = () => handleWebSocketClose();
+}, 500);
+
+const handleWebSocketMessage = (message) => {
+  if (["INIT_STATE", "PRESENCE_UPDATE"].includes(message.t)) {
+    const data = message.d;
+    spotify.value = data.activities.find((act) => act.name === "Spotify") || null;
+    vscodeActivity.value = data.activities.find((act) => act.name === "Code") || null;
+    setDiscordStatus(data.discord_status);
+  }
+};
+
+const handleWebSocketClose = () => {
+  console.log("WebSocket closed. Attempting to reconnect...");
+  const interval = RECONNECT_INTERVAL[reconnectAttempts] || 10000;
+  setTimeout(connectWebSocket, interval);
+  reconnectAttempts = Math.min(reconnectAttempts + 1, RECONNECT_INTERVAL.length - 1);
+};
+
+const setDiscordStatus = (status) => {
+  const statusMap = {
+    online: ["text-catppuccin-green", "online"],
+    idle: ["text-catppuccin-yellow", "idle"],
+    dnd: ["text-catppuccin-red", "do not disturb"],
+    offline: ["text-catppuccin-gray", "offline"],
+  };
+  const [color, label] = statusMap[status] || statusMap.offline;
+  discordStatusColor.value = color;
+  discordStatus.value = label;
+};
+
+onMounted(async () => {
+  connectWebSocket();
+  await fetchLanguageColors();
+  await fetchRepos();
 });
 
 onUnmounted(() => {
-  if (ws.value) {
-    ws.value.close();
-  }
+  ws.value?.close();
 });
 </script>
 
