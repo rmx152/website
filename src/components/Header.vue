@@ -388,6 +388,8 @@ onUnmounted(() => {
       </div>
     </main>
 
+    <img src="https://count.getloli.com/@4levy?name=4levy&theme=booru-qualityhentais&padding=7&offset=0&scale=1&pixelated=1&darkmode=auto">
+    
     <footer
       class="bg-catppuccin-mantle text-catppuccin-text text-center p-4 footer-blur"
     >
