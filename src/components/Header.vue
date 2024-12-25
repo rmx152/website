@@ -388,14 +388,18 @@ onUnmounted(() => {
       </div>
     </main>
 
-<img src="https://count.getloli.com/@4levy?name=4levy&theme=booru-qualityhentais&padding=7&offset=0&scale=1&pixelated=1&darkmode=auto">
-
-    <footer
-      class="bg-catppuccin-mantle text-catppuccin-text text-center p-4 footer-blur"
-    >
-      <p>&copy; 2024 4levy. All rights reserved.</p>
-    </footer>
+<footer
+  class="bg-catppuccin-mantle text-catppuccin-text text-center p-4 footer-blur"
+>
+  <p>&copy; 2024 4levy. All rights reserved.</p>
+</footer>
   </div>
+  <br>
+  <img 
+  src="https://count.getloli.com/@4levy?name=4levy&theme=booru-qualityhentais&padding=7&offset=0&scale=1&pixelated=1&darkmode=auto" 
+  style="width: 500px; height: auto;" 
+/>
+
 </template>
 
 <style>
@@ -541,7 +545,7 @@ body {
 }
 
 .glow {
-  box-shadow: 0 0 15px 5px rgba(173, 216, 230, 0.7); /* Light blue glow */
+  box-shadow: 0 0 15px 5px rgba(173, 216, 230, 0.7);
 }
 
 @keyframes pulse-glow {
