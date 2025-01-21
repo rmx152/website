@@ -466,7 +466,7 @@ export default {
   data() {
     return {
       Bio: "Hiiiiiiiiiiii~!",
-      Description: '"that just a lie..?"',
+      Description: '"She a pure Magic..?!"',
       socialLinks: [
         {
           name: "GitHub",
