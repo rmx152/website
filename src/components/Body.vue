@@ -483,6 +483,11 @@ export default {
           url: "mailto:miyakomoriko@gmail.com",
           icon: "ri-mail-fill",
         },
+        {
+          name: "Instagram",
+          url: "https://www.instagram.com/4levyz/",
+          icon: "ri-instagram-fill",
+        },
       ],
 
       images: [
